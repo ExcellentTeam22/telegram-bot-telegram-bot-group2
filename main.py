@@ -58,26 +58,20 @@ def palindrome(num):
 
 def factorial(num):
     num = int(num)
-    i = 1;
+    i = 1
     while True:
         if num % i == 0:
-            num //= i;
+            num //= i
         else:
-            break;
-        i += 1;
+            break
+        i += 1
 
-    if num == 1:
-        return True;
-    else:
-        return False;
+    return True if num == 1 else False
 
 
 def sqrt(num):
     num = int(num)
-    if num < 0:
-        return False
-    else:
-        return math.sqrt(num).is_integer()
+    return False if num < 0 else math.sqrt(num).is_integer()
 
 
 if __name__ == '__main__':
