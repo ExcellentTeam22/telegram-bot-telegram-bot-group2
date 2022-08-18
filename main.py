@@ -1,6 +1,6 @@
 import math
-from re import split
 
+import dp as dp
 import requests as requests
 from flask import Flask, Response, request
 
@@ -19,13 +19,13 @@ def sanity(): return "Server is running"
 
 @app.route('/message', methods=["POST"])
 def handle_message():
-    print("got message")
+
     json_got = request.get_json()
     chat_id = json_got['message']['chat']['id']
-    result = None
     command = (json_got['message']['text']).split()[0]
     user_input = (json_got['message']['text']).split()[1]
 
+    result = None
     if command == "/palindrome":
         result = palindrome(user_input)
 
@@ -47,26 +47,21 @@ def palindrome(num):
 
 def factorial(num):
     num = int(num)
-    i = 1;
+    i = 1
     while True:
         if num % i == 0:
-            num //= i;
+            num //= i
         else:
-            break;
-        i += 1;
+            break
+        i += 1
 
-    if num == 1:
-        return True;
-    else:
-        return False;
+    return True if num == 1 else False
 
 
 def sqrt(num):
     num = int(num)
-    if num < 0:
-        return False
-    else:
-        return math.sqrt(num).is_integer()
+
+    return False if num < 0 else math.sqrt(num).is_integer()
 
 
 if __name__ == '__main__':
