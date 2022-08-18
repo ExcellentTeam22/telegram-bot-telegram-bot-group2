@@ -68,8 +68,7 @@ def prime(num):
 
 
 def palindrome(num):
-    result = True if num == num[::-1] else False
-    return result
+    return 'Palindrome' if num == num[::-1] else 'Not Palindrome'
 
 
 def factorial(num):
@@ -82,12 +81,12 @@ def factorial(num):
             break
         i += 1
 
-    return True if num == 1 else False
+    return 'Factorial' if num == 1 else 'Not Factorial'
 
 
 def sqrt(num):
     num = int(num)
-    return False if num < 0 else math.sqrt(num).is_integer()
+    return 'False' if num < 0 else math.sqrt(num).is_integer()
 
 def add_to_db(user_input):
     if user_input in df['number'].values:
