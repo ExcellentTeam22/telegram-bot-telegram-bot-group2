@@ -1,6 +1,7 @@
 import math
 from re import split
 
+import sympy.ntheory as nt
 import requests as requests
 from flask import Flask, Response, request
 
@@ -12,10 +13,8 @@ TELEGRAM_INIT_WEBHOOK_URL = 'https://api.telegram.org/bot{}/setWebhook?url=' \
     format(TOKEN)
 requests.get(TELEGRAM_INIT_WEBHOOK_URL)
 
-
 @app.route('/sanity')
 def sanity(): return "Server is running"
-
 
 @app.route('/message', methods=["POST"])
 def handle_message():
@@ -34,10 +33,21 @@ def handle_message():
 
     if command == "/sqrt":
         result = sqrt(user_input)
+    if command == "/prime":
+        result = prime(user_input)
 
     res = requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                        .format(TOKEN, chat_id, result))
     return Response("success")
+
+
+def prime(num):
+    """
+    function to check if number is prime
+    :param num: number to check
+    :return: prime or not prime
+    """
+    return 'prime' if nt.isprime(num) else 'not prime'
 
 
 def palindrome(num):
