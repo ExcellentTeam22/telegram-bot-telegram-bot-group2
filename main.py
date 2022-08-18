@@ -1,4 +1,7 @@
 import math
+import sys
+from http import server
+
 import requests as requests
 from flask import Flask, Response, request
 import pandas as pd
@@ -27,29 +30,30 @@ def handle_message():
     json_got = request.get_json()
     chat_id = json_got['message']['chat']['id']
     command = (json_got['message']['text']).split()[0]
-    user_input = (json_got['message']['text']).split()[1]
+
 
     if command == "/palindrome":
+        user_input = (json_got['message']['text']).split()[1]
         result = palindrome(user_input)
         add_to_db(user_input)
 
     elif command == "/factorial":
+        user_input = (json_got['message']['text']).split()[1]
         result = factorial(user_input)
         add_to_db(user_input)
 
     elif command == "/sqrt":
+        user_input = (json_got['message']['text']).split()[1]
         result = sqrt(user_input)
 
     elif command == "/prime":
+        user_input = (json_got['message']['text']).split()[1]
         result = prime(user_input)
         add_to_db(user_input)
 
     elif command == "/popular":
-        result = df.loc[df['appearance'].idxmax()][0]
+        result = most_popular_num()
 
-    elif command == "/exit":
-        df.to_hdf('bot_db.h5', 'data')
-        result = "Bye Bye"
     else:
         result = "command not recognized"
 
@@ -96,9 +100,15 @@ def add_to_db(user_input):
         dict[user_input] = 1
 
 
+def most_popular_num():
+    max = 0
+    max_key = 0
+    for key, val in dict.items():
+        if val > max:
+            max = val
+            max_key = key
+    return f'The most popular number is {max_key}'
+
+
 if __name__ == '__main__':
-    if exists('bot_db.h5'):
-        df = pd.read_hdf('bot_db.h5')
-    else:
-        df = pd.DataFrame(columns=['number', 'appearance'])
     app.run(port=5002)
