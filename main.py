@@ -45,7 +45,7 @@ def handle_message():
         add_to_db(user_input)
 
     elif command == "/popular":
-        result = df.loc[df['appearance'].idxmax()]
+        result = df.loc[df['appearance'].idxmax()][0]
 
     elif command == "/exit":
         df.to_hdf('bot_db.h5', 'data')
