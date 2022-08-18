@@ -2,6 +2,12 @@ import math
 import sympy.ntheory as nt
 import requests as requests
 from flask import Flask, Response, request
+import pandas as pd
+from os.path import exists
+from primePy import primes
+
+df = pd.DataFrame()
+
 
 app = Flask(__name__)
 
@@ -27,15 +33,33 @@ def handle_message():
 
     if command == "/palindrome":
         result = palindrome(user_input)
+        if user_input in df['number'].values:
+            df['number'][user_input] += 1
+        else:
+            df.loc[len(df.index)] = [user_input,1]
 
     if command == "/factorial":
         result = factorial(user_input)
+        if user_input in df['number'].values:
+            df['number'][user_input] += 1
+        else:
+            df.loc[len(df.index)] = [user_input,1]
 
     if command == "/sqrt":
         result = sqrt(user_input)
+        if user_input in df['number'].values:
+            df['number'][user_input] += 1
+        else:
+            df.loc[len(df.index)] = [user_input,1]
 
     if command == "/prime":
         result = prime(user_input)
+        if user_input in df['number'].values:
+            df['number'][user_input] += 1
+        else:
+            df.loc[len(df.index)] = [user_input,1]
+    if command == "/popular":
+        result = df.loc[pf['appearance'].idxmax()]
 
     else:
         result = "command not recognized"
@@ -45,7 +69,6 @@ def handle_message():
     return Response("success")
 
 
-from primePy import primes
 def prime(num):
     """
     function to check if number is prime
@@ -79,4 +102,9 @@ def sqrt(num):
 
 
 if __name__ == '__main__':
+    if exists('bot_db.h5'):
+        df = pd.read_hdf('bot_db.h5')
+    else:
+        df = pd.DataFrame(columns=['number', 'appearance'])
     app.run(port=5002)
+    df.to_hdf('bot_db.h5', 'data')
