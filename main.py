@@ -1,5 +1,5 @@
 import math
-import sympy.ntheory as nt
+from primePy import primes
 import requests as requests
 from flask import Flask, Response, request
 
@@ -45,7 +45,6 @@ def handle_message():
     return Response("success")
 
 
-from primePy import primes
 def prime(num):
     """
     function to check if number is prime
