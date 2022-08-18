@@ -30,31 +30,20 @@ def handle_message():
 
     if command == "/palindrome":
         result = palindrome(user_input)
-        if user_input in df['number'].values:
-            df['number'][user_input] += 1
-        else:
-            df.loc[len(df.index)] = [user_input, 1]
+        add_to_db(user_input)
 
     elif command == "/factorial":
         result = factorial(user_input)
-        if user_input in df['number'].values:
-            df['number'][user_input] += 1
-        else:
-            df.loc[len(df.index)] = [user_input, 1]
+        add_to_db(user_input)
 
     elif command == "/sqrt":
         result = sqrt(user_input)
-        if user_input in df['number'].values:
-            df['number'][user_input] += 1
-        else:
-            df.loc[len(df.index)] = [user_input, 1]
+
 
     elif command == "/prime":
         result = prime(user_input)
-        if user_input in df['number'].values:
-            df['number'][user_input] += 1
-        else:
-            df.loc[len(df.index)] = [user_input, 1]
+        add_to_db(user_input)
+
     elif command == "/popular":
         result = df.loc[df['appearance'].idxmax()]
 
@@ -99,6 +88,12 @@ def factorial(num):
 def sqrt(num):
     num = int(num)
     return False if num < 0 else math.sqrt(num).is_integer()
+
+def add_to_db(user_input):
+    if user_input in df['number'].values:
+        df.loc[(df['number'] == user_input), 'appearance'] += 1
+    else:
+        df.loc[len(df.index)] = [user_input, 1]
 
 
 if __name__ == '__main__':
