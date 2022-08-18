@@ -6,6 +6,7 @@ from os.path import exists
 from primePy import primes
 
 df = pd.DataFrame()
+dict = {}
 
 app = Flask(__name__)
 
@@ -38,7 +39,6 @@ def handle_message():
 
     elif command == "/sqrt":
         result = sqrt(user_input)
-
 
     elif command == "/prime":
         result = prime(user_input)
@@ -90,10 +90,10 @@ def sqrt(num):
 
 
 def add_to_db(user_input):
-    if user_input in df['number'].values:
-        df.loc[(df['number'] == user_input), 'appearance'] += 1
+    if user_input in dict.keys():
+        dict[user_input] += 1
     else:
-        df.loc[len(df.index)] = [user_input, 1]
+        dict[user_input] = 1
 
 
 if __name__ == '__main__':
