@@ -25,7 +25,6 @@ def handle_message():
     print("got message")
     json_got = request.get_json()
     chat_id = json_got['message']['chat']['id']
-    result = None
     command = (json_got['message']['text']).split()[0]
     user_input = (json_got['message']['text']).split()[1]
 
@@ -58,6 +57,10 @@ def handle_message():
             df.loc[len(df.index)] = [user_input, 1]
     elif command == "/popular":
         result = df.loc[df['appearance'].idxmax()]
+
+    elif command == "/exit":
+        df.to_hdf('bot_db.h5', 'data')
+        result = "Bye Bye"
     else:
         result = "command not recognized"
 
@@ -104,4 +107,3 @@ if __name__ == '__main__':
     else:
         df = pd.DataFrame(columns=['number', 'appearance'])
     app.run(port=5002)
-    df.to_hdf('bot_db.h5', 'data')
