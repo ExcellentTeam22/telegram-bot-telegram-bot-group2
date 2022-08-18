@@ -1,5 +1,4 @@
 import math
-from primePy import primes
 import requests as requests
 from flask import Flask, Response, request
 import pandas as pd
@@ -7,7 +6,6 @@ from os.path import exists
 from primePy import primes
 
 df = pd.DataFrame()
-
 
 app = Flask(__name__)
 
@@ -36,36 +34,35 @@ def handle_message():
         if user_input in df['number'].values:
             df['number'][user_input] += 1
         else:
-            df.loc[len(df.index)] = [user_input,1]
+            df.loc[len(df.index)] = [user_input, 1]
 
-    if command == "/factorial":
+    elif command == "/factorial":
         result = factorial(user_input)
         if user_input in df['number'].values:
             df['number'][user_input] += 1
         else:
-            df.loc[len(df.index)] = [user_input,1]
+            df.loc[len(df.index)] = [user_input, 1]
 
-    if command == "/sqrt":
+    elif command == "/sqrt":
         result = sqrt(user_input)
         if user_input in df['number'].values:
             df['number'][user_input] += 1
         else:
-            df.loc[len(df.index)] = [user_input,1]
+            df.loc[len(df.index)] = [user_input, 1]
 
-    if command == "/prime":
+    elif command == "/prime":
         result = prime(user_input)
         if user_input in df['number'].values:
             df['number'][user_input] += 1
         else:
-            df.loc[len(df.index)] = [user_input,1]
-    if command == "/popular":
-        result = df.loc[pf['appearance'].idxmax()]
-
+            df.loc[len(df.index)] = [user_input, 1]
+    elif command == "/popular":
+        result = df.loc[df['appearance'].idxmax()]
     else:
         result = "command not recognized"
 
-    res = requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
-                       .format(TOKEN, chat_id, result))
+    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                 .format(TOKEN, chat_id, result))
     return Response("success")
 
 
