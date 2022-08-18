@@ -1,6 +1,5 @@
 import math
 from re import split
-
 import sympy.ntheory as nt
 import requests as requests
 from flask import Flask, Response, request
@@ -13,8 +12,10 @@ TELEGRAM_INIT_WEBHOOK_URL = 'https://api.telegram.org/bot{}/setWebhook?url=' \
     format(TOKEN)
 requests.get(TELEGRAM_INIT_WEBHOOK_URL)
 
+
 @app.route('/sanity')
 def sanity(): return "Server is running"
+
 
 @app.route('/message', methods=["POST"])
 def handle_message():
