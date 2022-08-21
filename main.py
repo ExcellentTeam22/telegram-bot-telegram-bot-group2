@@ -53,13 +53,17 @@ def handle_message():
     print("got message")
     state = 0
     json_got = request.get_json()
-    chat_id = json_got['message']['chat']['id']
-    client_name = json_got['message']['chat']['first_name']
+    if 'message' in json_got:
+        message_or_edited = 'message'
+    else:
+        message_or_edited = 'edited_message'
+    chat_id = json_got[message_or_edited]['chat']['id']
+    client_name = json_got[message_or_edited]['chat']['first_name']
 
     if chat_id in conversation_db['id'].values:
         state = conversation_db.loc[conversation_db['id'] == chat_id, 'handler'].values[0]
     print(state)
-    command = (json_got['message']['text']).split()[0].lower()
+    command = (json_got[message_or_edited]['text']).split()[0].lower()
     # command = (json_got['message']['text']).split()
     # if len(command) == 1 and state == ConversationHandler.FIND and command[0].lower() == 'no':
     #     command = command[0].lower()
@@ -84,16 +88,109 @@ def handle_message():
                              .format(TOKEN, chat_id, reply))
 
             elif command == 'find':
-                conversation_db.loc[conversation_db['id'] == chat_id, 'handler'] = ConversationHandler.FIND
-                user_input = (json_got['message']['text']).split()[1:]
+                user_input = (json_got[message_or_edited]['text']).split()[1:]
                 user_input = ' '.join([str(word) for word in user_input])
-                results = ys(user_input, max_results=3).to_dict()
-                conversation_db.loc[conversation_db['id'] == chat_id, 'data'] = js.dumps(results[1:])
-                link = 'https://www.youtube.com' + results[0]['url_suffix']
-                conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'] = link
-                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
-                             .format(TOKEN, chat_id, link))
-                reply = "Is this the video you have been looking for? Please reply 'yes' or 'no'."
+                if len(user_input) == 0:
+                    reply = "The name of the video is missing. Please try again."
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                else:
+                    conversation_db.loc[conversation_db['id'] == chat_id, 'handler'] = ConversationHandler.FIND
+                    results = ys(user_input, max_results=3).to_dict()
+                    conversation_db.loc[conversation_db['id'] == chat_id, 'data'] = js.dumps(results[1:])
+                    link = 'https://www.youtube.com' + results[0]['url_suffix']
+                    conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'] = link
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, link))
+                    reply = "Is this the video you have been looking for? Please reply 'yes' or 'no'."
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+
+            elif command == 'audio':
+                try:
+                    link = (json_got[message_or_edited]['text']).split()[1:]
+                    link = ' '.join([str(word) for word in link])
+                    stream = YouTube(link)
+                except:
+                    reply = "Please enter a valid youtube URL!"
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                else:
+                    reply = "Processing your request. Please wait a few minutes."
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                    file_path = r'C:\downloads\\' + stream.title + '.wav'
+                    if not os.path.isfile(file_path):
+                        song = stream.streams.filter(only_audio=True).first()
+                        output_file = song.download(output_path=r'C:\downloads')
+                        base, ext = os.path.splitext(output_file)
+                        title = stream.title
+                        new_file = base + '.wav'
+                        conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                        os.rename(output_file, new_file)
+                        path = new_file
+                    else:
+                        path = file_path
+                        title = stream.title
+                    payload = {
+                        'chat_id': chat_id,
+                        'title': '{}.wav'.format(title),
+                        'parse_mode': 'HTML'
+                    }
+
+                    files = {
+                        'audio': open(path, 'rb')
+                    }
+                    requests.post("https://api.telegram.org/bot{}/sendAudio".format(TOKEN), data=payload, files=files)
+
+                    reply = "Enjoy ! :)"
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                    conversation_db.drop(conversation_db.index[conversation_db['id'] == chat_id], inplace=True)
+
+            elif command == 'video':
+                try:
+                    link = (json_got[message_or_edited]['text']).split()[1:]
+                    link = ' '.join([str(word) for word in link])
+                    stream = YouTube(link)
+                except:
+                    reply = "Please enter a valid youtube URL!"
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                else:
+                    reply = "Processing your request. Please wait a few minutes."
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                    file_path = r'C:\downloads\\' + stream.title + '.mp4'
+                    if not os.path.isfile(file_path):
+                        song = stream.streams.filter(file_extension='mp4').first()
+                        output_file = song.download(output_path=r'C:\downloads')
+                        base, ext = os.path.splitext(output_file)
+                        new_file = base + '.mp4'
+                        title = stream.title
+                        conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                        path = new_file
+                    else:
+                        path = file_path
+                        title = stream.title
+                    payload = {
+                        'chat_id': chat_id,
+                        'title': '{}.mp4'.format(title),
+                        'parse_mode': 'HTML'
+                    }
+
+                    files = {
+                        'video': open(path, 'rb')
+                    }
+                    requests.post("https://api.telegram.org/bot{}/sendVideo".format(TOKEN), data=payload, files=files)
+
+                    reply = "Enjoy ! :)"
+                    requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                                 .format(TOKEN, chat_id, reply))
+                    conversation_db.drop(conversation_db.index[conversation_db['id'] == chat_id], inplace=True)
+
+            else:
+                reply = "Please reply with an appropriate command."
                 requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                              .format(TOKEN, chat_id, reply))
 
@@ -133,18 +230,27 @@ def handle_message():
                 requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                              .format(TOKEN, chat_id, reply))
             elif command == 'audio':
+                reply = "Processing your request. Please wait a few minutes."
+                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                             .format(TOKEN, chat_id, reply))
                 link = conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'][0]
                 yt = YouTube(link)
-                song = yt.streams.filter(only_audio=True).first()
-                output_file = song.download(output_path=r'C:\downloads')
-                base, ext = os.path.splitext(output_file)
-                new_file = base + '.wav'
-                conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
-                os.rename(output_file, new_file)
-                path = new_file
+                file_path = r'C:\downloads\\' + yt.title + '.wav'
+                if not os.path.isfile(file_path):
+                    song = yt.streams.filter(only_audio=True).first()
+                    output_file = song.download(output_path=r'C:\downloads')
+                    base, ext = os.path.splitext(output_file)
+                    title = yt.title
+                    new_file = base + '.wav'
+                    conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                    os.rename(output_file, new_file)
+                    path = new_file
+                else:
+                    path = file_path
+                    title = yt.title
                 payload = {
                     'chat_id': chat_id,
-                    'title': 'song.wav',
+                    'title': '{}.wav'.format(title),
                     'parse_mode': 'HTML'
                 }
 
@@ -153,18 +259,32 @@ def handle_message():
                 }
                 requests.post("https://api.telegram.org/bot{}/sendAudio".format(TOKEN), data=payload, files=files)
 
+                reply = "Enjoy ! :)"
+                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                             .format(TOKEN, chat_id, reply))
+                conversation_db.drop(conversation_db.index[conversation_db['id'] == chat_id], inplace=True)
+
             elif command == 'video':
+                reply = "Processing your request. Please wait a few minutes."
+                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                             .format(TOKEN, chat_id, reply))
                 link = conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'][0]
                 yt = YouTube(link)
-                song = yt.streams.filter(file_extension='mp4').first()
-                output_file = song.download(output_path=r'C:\downloads')
-                base, ext = os.path.splitext(output_file)
-                new_file = base + '.mp4'
-                conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
-                path = new_file
+                file_path = r'C:\downloads\\' + yt.title + '.mp4'
+                if not os.path.isfile(file_path):
+                    song = yt.streams.filter(file_extension='mp4').first()
+                    output_file = song.download(output_path=r'C:\downloads')
+                    base, ext = os.path.splitext(output_file)
+                    new_file = base + '.mp4'
+                    title = yt.title
+                    conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                    path = new_file
+                else:
+                    path = file_path
+                    title = yt.title
                 payload = {
                     'chat_id': chat_id,
-                    'title': 'song.mp4',
+                    'title': '{}.mp4'.format(title),
                     'parse_mode': 'HTML'
                 }
 
@@ -172,6 +292,11 @@ def handle_message():
                     'video': open(path, 'rb')
                 }
                 requests.post("https://api.telegram.org/bot{}/sendVideo".format(TOKEN), data=payload, files=files)
+
+                reply = "Enjoy ! :)"
+                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                             .format(TOKEN, chat_id, reply))
+                conversation_db.drop(conversation_db.index[conversation_db['id'] == chat_id], inplace=True)
 
         case _:
             requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
