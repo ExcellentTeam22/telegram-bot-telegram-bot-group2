@@ -10,6 +10,8 @@ from primePy import primes
 from youtube_search import YoutubeSearch as ys
 from enum import IntEnum
 import json as js
+import os
+from pytube import YouTube
 
 
 class ConversationHandler(IntEnum):
@@ -71,7 +73,7 @@ def handle_message():
                 requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                              .format(TOKEN, chat_id, reply))
             elif command == '/start':
-                conversation_db.loc[len(conversation_db.index)] = [chat_id, 0, None, None]
+                conversation_db.loc[len(conversation_db.index)] = [chat_id, 0, None, None, None]
                 print(conversation_db)
                 reply = "hello " + str(client_name) + "! \nI am Boti-Bot and i provide youtube search " \
                                                       "and download services :D \n i support the following commands:" \
@@ -126,11 +128,54 @@ def handle_message():
                                  .format(TOKEN, chat_id, link))
 
         case ConversationHandler.DOWNLOAD_OPTION:
-            return
+            if command != 'audio' and command != 'video':
+                reply = 'Please answer audio or video.'
+                requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                             .format(TOKEN, chat_id, reply))
+            elif command == 'audio':
+                link = conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'][0]
+                yt = YouTube(link)
+                song = yt.streams.filter(only_audio=True).first()
+                output_file = song.download(output_path=r'C:\downloads')
+                base, ext = os.path.splitext(output_file)
+                new_file = base + '.wav'
+                conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                os.rename(output_file, new_file)
+                path = new_file
+                payload = {
+                    'chat_id': chat_id,
+                    'title': 'song.wav',
+                    'parse_mode': 'HTML'
+                }
+
+                files = {
+                    'audio': open(path, 'rb')
+                }
+                requests.post("https://api.telegram.org/bot{}/sendAudio".format(TOKEN), data=payload, files=files)
+
+            elif command == 'video':
+                link = conversation_db.loc[conversation_db['id'] == chat_id, 'cur_data'][0]
+                yt = YouTube(link)
+                song = yt.streams.filter(file_extension='mp4').first()
+                output_file = song.download(output_path=r'C:\downloads')
+                base, ext = os.path.splitext(output_file)
+                new_file = base + '.mp4'
+                conversation_db.loc[conversation_db['id'] == chat_id, 'file_name'] = new_file
+                path = new_file
+                payload = {
+                    'chat_id': chat_id,
+                    'title': 'song.mp4',
+                    'parse_mode': 'HTML'
+                }
+
+                files = {
+                    'video': open(path, 'rb')
+                }
+                requests.post("https://api.telegram.org/bot{}/sendVideo".format(TOKEN), data=payload, files=files)
 
         case _:
-             requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
-                          .format(TOKEN, chat_id, 'bye-bye!'))
+            requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
+                         .format(TOKEN, chat_id, 'bye-bye!'))
     # if command == "/palindrome":
     #     user_input = (json_got['message']['text']).split()[1]
     #     result = palindrome(user_input)
@@ -171,7 +216,6 @@ def handle_message():
     # requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
     #              .format(TOKEN, chat_id, result))
     return Response("success")
-
 
 def prime(num):
     """
@@ -229,5 +273,5 @@ if __name__ == '__main__':
     if exists('conversation.csv'):
         conversation_db = pd.read_csv('conversation.csv')
     else:
-        conversation_db = pd.DataFrame(columns=['id', 'handler', 'cur_data', 'data'])
+        conversation_db = pd.DataFrame(columns=['id', 'handler', 'cur_data', 'data', 'file_name'])
     app.run(port=5002)
