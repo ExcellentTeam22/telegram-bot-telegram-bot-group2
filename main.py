@@ -57,12 +57,12 @@ def handle_message():
     if chat_id in conversation_db['id'].values:
         state = conversation_db.loc[conversation_db['id'] == chat_id, 'handler'].values[0]
     print(state)
-    # command = (json_got['message']['text']).split()[0].lower()
-    command = (json_got['message']['text']).split()
-    if len(command) == 1 and state == ConversationHandler.FIND and command[0] == 'no':
-        command = 'find ' + command
-    else:
-        command = (json_got['message']['text']).split()[0].lower()
+    command = (json_got['message']['text']).split()[0].lower()
+    # command = (json_got['message']['text']).split()
+    # if len(command) == 1 and state == ConversationHandler.FIND and command[0].lower() == 'no':
+    #     command = command[0].lower()
+    # else:
+    #     command = (json_got['message']['text']).split()[0].lower()
 
     match state:
         case ConversationHandler.START:
@@ -71,7 +71,7 @@ def handle_message():
                 requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                              .format(TOKEN, chat_id, reply))
             elif command == '/start':
-                conversation_db.loc[len(conversation_db.index)] = [chat_id, 0, None]
+                conversation_db.loc[len(conversation_db.index)] = [chat_id, 0, None, None]
                 print(conversation_db)
                 reply = "hello " + str(client_name) + "! \nI am Boti-Bot and i provide youtube search " \
                                                       "and download services :D \n i support the following commands:" \
@@ -96,7 +96,7 @@ def handle_message():
                              .format(TOKEN, chat_id, reply))
 
         case ConversationHandler.FIND:
-            if command != 'yes' or command != 'no':
+            if command != 'yes' and command != 'no':
                 reply = 'Please answer yes or no.'
                 requests.get("https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}"
                              .format(TOKEN, chat_id, reply))
@@ -109,7 +109,7 @@ def handle_message():
                              .format(TOKEN, chat_id, reply))
 
             elif command == 'no':
-                data = js.loads(conversation_db.loc[conversation_db['id'] == chat_id, 'data'])
+                data = js.loads(conversation_db.loc[conversation_db['id'] == chat_id, 'data'][0])
                 if len(data) == 0:
                     reply = "I couldn't find your video. Please check your spellings and try again. bye-bye!"
                     conversation_db.drop(conversation_db.index[conversation_db['id'] == chat_id], inplace=True)
@@ -225,9 +225,9 @@ if __name__ == '__main__':
     if exists('bot_db.h5'):
         df = pd.read_hdf('bot_db.h5')
     else:
-        df = pd.DataFrame(columns=['id', 'handler','cur_data','data'])
+        df = pd.DataFrame(columns=['id', 'handler', 'cur_data', 'data'])
     if exists('conversation.csv'):
         conversation_db = pd.read_csv('conversation.csv')
     else:
-        conversation_db = pd.DataFrame(columns=['id','handler','data'])
+        conversation_db = pd.DataFrame(columns=['id', 'handler', 'cur_data', 'data'])
     app.run(port=5002)
